@@ -19,3 +19,10 @@ CPU: Intel i7 2600, VMWare with 2 cores, 2GB, Windows 7 64.
 	9, 0, 0,   0, 0, 0,   3, 0, 7
 	0, 8, 0,   0, 6, 0,   0, 9, 0
 	0, 0, 4,   8, 0, 0,   0, 0, 0
+
+Release Notes - optimization changes
+
+ Small changes, huge impact on total time.
+ It's now resolving 100k within 42s.
+
+

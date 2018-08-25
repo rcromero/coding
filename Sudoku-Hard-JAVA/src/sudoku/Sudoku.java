@@ -86,8 +86,8 @@ public class Sudoku {
 				found[0] = true;
 			});
 			
-			if(found[0])
-				sudokuTable.optmizeByQuadrant();
+			if(!found[0] && !sudokuTable.isResolved() && sudokuTable.optmizeByQuadrant())
+				continue;
 			
 		} while(found[0]);
 		
@@ -117,8 +117,8 @@ public class Sudoku {
 	public static class SudokuTable {
 		int [][] table;
 		
-		SudokuValue [][]  tableToResolve;
-		List<SudokuValue> toResolve;
+		SudokuValue [][]  tableToResolve = new SudokuValue[ROWS][COLUMNS];
+		List<SudokuValue> toResolve = new CopyOnWriteArrayList<>();
 		
 		@SuppressWarnings("unchecked")
 		Set<Integer> [] row = new Set[ROWS];
@@ -131,10 +131,41 @@ public class Sudoku {
 		
 		public SudokuTable(int [][] sudokuTable) {
 			table = sudokuTable;
-			initRows();
-			initColumns();
-			initQuadrants();
-			initValuesToResolve();
+			init();
+		}
+		
+		private void init() {
+			for(int r, c, jj, ii, j, i, q = 0; q < QUADRANTS; q++) {
+				this.quadrant[q] = new HashSet<>(Arrays.asList(ALLVALUES));
+			
+				ii = (q / 3)*3;
+				jj = (q % 3)*3;
+				
+				for(i = 0; i < 3; i++) {
+					r = i + ii;
+					c = jj;
+					for(j = 0; j < 3; j++, c++) {
+						if(c == 0)
+							this.row[r] = new HashSet<>(Arrays.asList(ALLVALUES));
+						if(r == 0)
+							this.column[c] = new HashSet<>(Arrays.asList(ALLVALUES));
+						
+						if(table[r][c] != 0) {
+							this.row[r].remove(table[r][c]);
+							this.column[c].remove(table[r][c]);
+							this.quadrant[q].remove(table[r][c]);
+						} else {
+							tableToResolve[r][c] = new SudokuValue(r, c);
+							toResolve.add(tableToResolve[r][c]);
+						}
+					}
+				}
+			}
+			toResolve.forEach(SudokuValue::checkValues);
+		}
+
+		public boolean isResolved() {
+			return toResolve.isEmpty();
 		}
 		
 		public Set<SudokuValue> checkUnique(Function<Integer, Stream<SudokuValue>> source) {
@@ -172,54 +203,9 @@ public class Sudoku {
 			return result;
 		}
 		
-		private void initValuesToResolve() {
-			tableToResolve = new SudokuValue[ROWS][COLUMNS];
-			toResolve = new CopyOnWriteArrayList<>();
-			for(int j, i = 0; i < ROWS; i++)
-				for(j = 0; j < COLUMNS; j++)
-					if(table[i][j] == 0) {
-						tableToResolve[i][j] = new SudokuValue(i, j);
-						toResolve.add(tableToResolve[i][j]);
-					}
-						
-			optmizeByQuadrant();
-		}
 		
-		private void initRows() {
-			for(int j, i = 0; i < ROWS; i++) {
-				this.row[i] = new HashSet<>(Arrays.asList(ALLVALUES));
-			
-				for(j = 0; j < COLUMNS; j++)
-					if(table[i][j] != 0)
-						this.row[i].remove(table[i][j]);
-			}
-		}
-		
-		private void initColumns() {
-			for(int j, i = 0; i < COLUMNS; i++) {
-				this.column[i] = new HashSet<>(Arrays.asList(ALLVALUES));
-			
-				for(j = 0; j < ROWS; j++)
-					if(table[j][i] != 0)
-						this.column[i].remove(table[j][i]);
-			}
-		}
-		
-		private void initQuadrants() {
-			for(int jj, ii, j, i, q = 0; q < QUADRANTS; q++) {
-				this.quadrant[q] = new HashSet<>(Arrays.asList(ALLVALUES));
-			
-				ii = (q / 3)*3;
-				jj = (q % 3)*3;
-				
-				for(i = 0; i < 3; i++)
-					for(j = 0; j < 3; j++)
-						if(table[i + ii][j + jj] != 0)
-							this.quadrant[q].remove(table[i + ii][j + jj]);
-			}
-		}
-		
-		private void optmizeByQuadrant() {
+		private boolean optmizeByQuadrant() {
+			boolean result = false;
 			Integer value;
 			Iterator<Integer> ivalue;
 			Set<Integer> uniqueValues, duplicatedValues;
@@ -260,7 +246,8 @@ public class Sudoku {
 							for(j = 0; j < COLUMNS; j++)
 								if(j < jj || j >= jj + 3)
 									if(tableToResolve[i + ii][j] != null)
-										tableToResolve[i + ii][j].values.removeAll(byRow[i]);
+										if(tableToResolve[i + ii][j].values.removeAll(byRow[i]))
+											result = true;
 					}
 				
 				// by column
@@ -292,10 +279,12 @@ public class Sudoku {
 							for(j = 0; j < ROWS; j++)
 								if(j < ii || j >= ii + 3)
 									if(tableToResolve[j][i + jj] != null)
-										tableToResolve[j][i + jj].values.removeAll(byColumn[i]);
+										if(tableToResolve[j][i + jj].values.removeAll(byColumn[i]))
+											result = true;
 					}
 				
 			}
+			return result;
 		}
 
 		private Function<Integer, Stream<SudokuValue>> rowValues = index -> {
@@ -340,11 +329,10 @@ public class Sudoku {
 				this.iRow = iRow;
 				this.iCol = iCol;
 				this.iQud = ((iRow / 3) * 3) + (iCol/3);
-				this.values = new HashSet<>(Arrays.asList(ALLVALUES));
-				checkValues();
+				this.values = new HashSet<>(row[iRow]);
 			}
 			
-			private void checkValues() {
+			public void checkValues() {
 				// intersection of the three sets
 				values.retainAll(row[iRow]);
 				values.retainAll(column[iCol]);
@@ -361,18 +349,18 @@ public class Sudoku {
 			
 			public void resolve() {
 				if(!hasOnlyOnePossibility())
-					throw new RuntimeException("Resolving with more than one value");
+					throw new RuntimeException("Resolving with more than one value or none");
 				
 				int value = getNextPossibility();
-				
+
 				table[iRow][iCol] = value;
 				tableToResolve[iRow][iCol] = null;
 				toResolve.remove(this);
-				
+
 				row[iRow].remove(value);
 				column[iCol].remove(value);
 				quadrant[iQud].remove(value);
-				
+
 				Set<SudokuValue> toUpdate = rowValues.apply(iRow).collect(Collectors.toSet());
 				toUpdate.addAll(columnValues.apply(iCol).collect(Collectors.toSet()));
 				toUpdate.addAll(quadrantValues.apply(iQud).collect(Collectors.toSet()));
