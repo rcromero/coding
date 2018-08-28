@@ -24,5 +24,3 @@ Release Notes - optimization changes
 
  Small changes, huge impact on total time.
  It's now resolving 100k within 42s.
-
-

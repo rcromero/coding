@@ -46,7 +46,7 @@ public class Sudoku {
 		};
 		
 		// benchmark
-		for(int i = 0; i < 100_000; i++)
+		// for(int i = 0; i < 100_000; i++)
 			resolveTable(copyTable(toResolve));
 
 		long finish = System.currentTimeMillis();
@@ -85,9 +85,6 @@ public class Sudoku {
 				sudokuValue.resolve();
 				found[0] = true;
 			});
-			
-			if(!found[0] && !sudokuTable.isResolved() && sudokuTable.optmizeByQuadrant())
-				continue;
 			
 		} while(found[0]);
 		
@@ -203,90 +200,6 @@ public class Sudoku {
 			return result;
 		}
 		
-		
-		private boolean optmizeByQuadrant() {
-			boolean result = false;
-			Integer value;
-			Iterator<Integer> ivalue;
-			Set<Integer> uniqueValues, duplicatedValues;
-			@SuppressWarnings("unchecked")
-			Set<Integer> [] byRow = new Set[3], byColumn = new Set[3];
-
-			for(int jj, ii, j, i, q = 0; q < QUADRANTS; q++) {
-				
-				ii = (q / 3)*3;
-				jj = (q % 3)*3;
-				
-				// by row
-				uniqueValues = new HashSet<>();
-				duplicatedValues = new HashSet<>();
-				for(i = 0; i < 3; i++) {
-					byRow[i] = new HashSet<>();
-					for(j = 0; j < 3; j++)
-						if(tableToResolve[i + ii][j + jj] != null)
-							byRow[i].addAll(tableToResolve[i + ii][j + jj].values);
-
-					for(ivalue = byRow[i].iterator(); ivalue.hasNext(); ) {
-						value = ivalue.next();
-						if(!duplicatedValues.contains(value)) {
-							if(!uniqueValues.contains(value)) {
-								uniqueValues.add(value);
-							} else {
-								uniqueValues.remove(value);
-								duplicatedValues.add(value);
-							}
-						}
-					}
-				}
-				
-				if(!uniqueValues.isEmpty())
-					for(i = 0; i < 3; i++) {
-						byRow[i].retainAll(uniqueValues);
-						if(!byRow[i].isEmpty())
-							for(j = 0; j < COLUMNS; j++)
-								if(j < jj || j >= jj + 3)
-									if(tableToResolve[i + ii][j] != null)
-										if(tableToResolve[i + ii][j].values.removeAll(byRow[i]))
-											result = true;
-					}
-				
-				// by column
-				uniqueValues = new HashSet<>();
-				duplicatedValues = new HashSet<>();
-				for(i = 0; i < 3; i++) {
-					byColumn[i] = new HashSet<>();
-					for(j = 0; j < 3; j++)
-						if(tableToResolve[j + ii][i + jj] != null)
-							byColumn[i].addAll(tableToResolve[j + ii][i + jj].values);
-
-					for(ivalue = byColumn[i].iterator(); ivalue.hasNext(); ) {
-						value = ivalue.next();
-						if(!duplicatedValues.contains(value)) {
-							if(!uniqueValues.contains(value)) {
-								uniqueValues.add(value);
-							} else {
-								uniqueValues.remove(value);
-								duplicatedValues.add(value);
-							}
-						}
-					}
-				}
-				
-				if(!uniqueValues.isEmpty())
-					for(i = 0; i < 3; i++) {
-						byColumn[i].retainAll(uniqueValues);
-						if(!byColumn[i].isEmpty())
-							for(j = 0; j < ROWS; j++)
-								if(j < ii || j >= ii + 3)
-									if(tableToResolve[j][i + jj] != null)
-										if(tableToResolve[j][i + jj].values.removeAll(byColumn[i]))
-											result = true;
-					}
-				
-			}
-			return result;
-		}
-
 		private Function<Integer, Stream<SudokuValue>> rowValues = index -> {
 			Builder<SudokuValue> builder = Stream.builder();
 			
