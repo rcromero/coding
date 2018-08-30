@@ -50,22 +50,25 @@ public class Sudoku {
 			resolveTable(copyTable(toResolve));
 
 		long finish = System.currentTimeMillis();
-		
 		System.out.println((finish - start) + "ms");
 	}
 	
+	public static int[][] copyTable(int[][] source) {
+		int[][] dest = new int[ROWS][];
+		for (int i = 0; i < ROWS; i++)
+			dest[i] = Arrays.copyOf(source[i], COLUMNS);
+		return dest;
+	}	
 	public static void resolveTable(int[][] init) {
 		SudokuTable sudokuTable = new SudokuTable(init); 
 		
-		boolean found[] = {false};
+		boolean [] found = {false};
 		do {
 			found[0] = false;
 			// check 3 functions...
-			sudokuTable.toResolve.forEach(sudokuValue -> {
-				if(sudokuValue.hasOnlyOnePossibility()) {
-					sudokuValue.resolve();
-					found[0] = true;
-				}
+			sudokuTable.toResolve.stream().filter(SudokuTable.SudokuValue::hasOnlyOnePossibility).forEach(sudokuValue -> {
+				sudokuValue.resolve();
+				found[0] = true;
 			});
 			
 			// check unique quadrant...
@@ -104,12 +107,6 @@ public class Sudoku {
 		System.out.println();
 	}
 	
-	public static int[][] copyTable(int[][] source) {
-		int[][] dest = new int[ROWS][];
-		for (int i = 0; i < ROWS; i++)
-			dest[i] = Arrays.copyOf(source[i], COLUMNS);
-		return dest;
-	}	
 	
 	public static class SudokuTable {
 		int [][] table;
@@ -128,10 +125,10 @@ public class Sudoku {
 		
 		public SudokuTable(int [][] sudokuTable) {
 			table = sudokuTable;
-			init();
+			initValues();
 		}
 		
-		private void init() {
+		private void initValues() {
 			for(int r, c, jj, ii, j, i, q = 0; q < QUADRANTS; q++) {
 				this.quadrant[q] = new HashSet<>(Arrays.asList(ALLVALUES));
 			
@@ -200,7 +197,7 @@ public class Sudoku {
 			return result;
 		}
 		
-		private Function<Integer, Stream<SudokuValue>> rowValues = index -> {
+		public Function<Integer, Stream<SudokuValue>> rowValues = index -> {
 			Builder<SudokuValue> builder = Stream.builder();
 			
 			for(int j = 0; j < COLUMNS; j++)
@@ -209,7 +206,7 @@ public class Sudoku {
 			return builder.build().filter(value -> value != null);
 		};		
 
-		private Function<Integer, Stream<SudokuValue>> columnValues = index -> {
+		public Function<Integer, Stream<SudokuValue>> columnValues = index -> {
 			Builder<SudokuValue> builder = Stream.builder();
 			
 			for(int j = 0; j < ROWS; j++)
@@ -218,7 +215,7 @@ public class Sudoku {
 			return builder.build().filter(value -> value != null);
 		};		
 		
-		private Function<Integer, Stream<SudokuValue>> quadrantValues = index -> {
+		public Function<Integer, Stream<SudokuValue>> quadrantValues = index -> {
 			Builder<SudokuValue> builder = Stream.builder();
 			
 			int ii = (index / 3)*3;
