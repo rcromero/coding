@@ -19,7 +19,7 @@ SudokuValue::SudokuValue(int r, int c, int q, int *row, int *column, int *quadra
   this->col = column;
   this->qud = quadrant;
 
-  this->values = ALLVALUES;
+  this->values = *row;
 }
 
 void SudokuValue::checkValues() {
@@ -51,4 +51,3 @@ int SudokuValue::resolve() {
 
 SudokuValue::~SudokuValue() {
 }
-

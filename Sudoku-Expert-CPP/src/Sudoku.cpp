@@ -118,10 +118,10 @@ void resolveTable(int **init) {
     }
 
     if(sudokuTable->getToResolve() != NULL) {
-      if(found) {
-        sudokuTable->optmizeByQuadrant();
+      if(found)
         continue;
-      }
+      if(sudokuTable->optmizeByQuadrant())
+        continue;
       sudokuTable->guess();
     } else {
       if(!resolved) {

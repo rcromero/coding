@@ -46,7 +46,7 @@ public:
   SudokuTable(int **sudokuTable);
   void          guess();
   void          resolve(SudokuValue *value);
-  void          optmizeByQuadrant();
+  bool          optmizeByQuadrant();
   LinkedValue * checkUniqueRow();
   LinkedValue * checkUniqueColumn();
   LinkedValue * checkUniqueQuadrant();

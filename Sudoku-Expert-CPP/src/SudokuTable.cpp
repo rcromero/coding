@@ -28,8 +28,8 @@ void SudokuTable::initValues() {
     jj = (q % 3) * 3;
 
     for (i = 0; i < 3; i++) {
+     r = i + ii;
      for (j = 0; j < 3; j++) {
-        r = i + ii;
         c = j + jj;
         if(c == 0) {
           row[r] = ALLVALUES;
@@ -61,16 +61,17 @@ void SudokuTable::initValues() {
   for (LinkedValue *check = toResolve; check != NULL; check = check->next)
     check->curr->checkValues();
 
-  optmizeByQuadrant();
+  //optmizeByQuadrant();
 }
 
 /**
  * Checks if a missing value of a row or column can only be found in a specific quadrant and
  * remove this possibility from the other quadrants.
  */
-void SudokuTable::optmizeByQuadrant() {
+bool SudokuTable::optmizeByQuadrant() {
+  bool result = false;
   int byRow[3], byColumn [3];
-  for (int uniqueValues, duplicateValues, ii, jj, i, j, q = 0; q < QUADRANTS; q++) {
+  for (int chgValue, uniqueValues, duplicateValues, ii, jj, i, j, q = 0; q < QUADRANTS; q++) {
     if (quadrantToResolve[q] == NULL)
       continue;
 
@@ -99,8 +100,12 @@ void SudokuTable::optmizeByQuadrant() {
           for (j = 0; j < COLUMNS; j++) {
             if (j < jj || j >= jj + 3) {
               SudokuValue * optimize = tableToResolve[i + ii][j];
-              if (optimize != NULL)
+              if (optimize != NULL) {
+                chgValue = optimize->getNextPossibility();
                 optimize->optimize(byRow[i]);
+                if(optimize->getNextPossibility() != chgValue)
+                  result = true;
+              }
             }
           }
         }
@@ -128,14 +133,19 @@ void SudokuTable::optmizeByQuadrant() {
           for (j = 0; j < ROWS; j++) {
             if (j < ii || j >= ii + 3) {
               SudokuValue * optimize = tableToResolve[j][i + jj];
-              if (optimize != NULL)
+              if (optimize != NULL) {
+                chgValue = optimize->getNextPossibility();
                 optimize->optimize(byColumn[i]);
+                if(optimize->getNextPossibility() != chgValue)
+                  result = true;
+              }
             }
           }
         }
       }
     }
   }
+  return result;
 }
 
 LinkedValue * SudokuTable::checkUniqueRow() {
