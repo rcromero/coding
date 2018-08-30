@@ -60,8 +60,6 @@ void SudokuTable::initValues() {
   }
   for (LinkedValue *check = toResolve; check != NULL; check = check->next)
     check->curr->checkValues();
-
-  //optmizeByQuadrant();
 }
 
 /**
